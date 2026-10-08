@@ -35,6 +35,7 @@ data class PdfPageSpec(
     val pageHeightPt: Double,
     val frames: List<PdfFrame>,
     val cutLines: List<PdfLine>,
+    val overlays: List<PdfOverlay> = emptyList(),
 )
 
 fun SheetLayout.toPdfPageSpec(): PdfPageSpec {

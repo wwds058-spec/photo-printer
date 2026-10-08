@@ -15,6 +15,8 @@ kotlin {
 }
 
 dependencies {
+    // Flow for repository interfaces; still pure JVM.
+    api(libs.kotlinx.coroutines.core)
     testImplementation(libs.kotlin.test)
     // Independent PDF reader/renderer used only to verify the writer's physical output.
     testImplementation(libs.pdfbox)

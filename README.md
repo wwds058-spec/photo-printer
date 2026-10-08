@@ -33,6 +33,9 @@ known limits.
 | 1 Architecture + design system | done — `:app` **not yet compiled** (no Android SDK in the authoring environment) |
 | 2 Measurement models + Layout Engine | done |
 | 3 Layout Engine tests | done |
-| 7 PDF generation (pure Kotlin, in `:domain`) | done — verified by rendering the PDF and measuring pixels (55 tests total) |
+| 7 PDF generation (pure Kotlin, in `:domain`) | done — verified by rendering the PDF and measuring pixels |
+| 9 (domain half) projects, templates, repositories | done as pure Kotlin; Room implementation still to do in `:app` |
+| 8 (domain half) printing models, safety check, test print | done; `PrintDocumentAdapter` / printer discovery still to do in `:app` |
+| 11 (domain half) calibration page + scale diagnosis | done; the physical measurement itself needs a real printer |
 | 4–6 UI (home, picker, editor, sizes, preview) | not started — needs Android Studio to compile |
-| 8+ Android print framework, projects, templates … | not started |
+| Android print framework, Room, DataStore | not started — needs Android Studio |

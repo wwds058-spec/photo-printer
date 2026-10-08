@@ -32,8 +32,10 @@ data class LayoutRequest(
     /** Allow turning photos 90° when that fits more per sheet. */
     val allowRotation: Boolean = true,
     val showCutLines: Boolean = false,
-    /** Crop state given to every new placement. */
+    /** Crop state for photos without an entry in [crops]. */
     val defaultCrop: CropState = CropState(),
+    /** Per-photo crop/zoom/pan/rotation from the editor, keyed by photo id. */
+    val crops: Map<String, CropState> = emptyMap(),
 )
 
 enum class PhotoOrientation(val rotationDegrees: Int) {

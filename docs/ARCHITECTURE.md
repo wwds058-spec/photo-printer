@@ -60,6 +60,32 @@ ticks and none are drawn.
   JPEG by the Android side (re-encode at high quality) — the writer itself does not alter pixels.
 - Tests render the PDF with PDFBox at 254 dpi (10 px = 1 mm) and measure where colours land.
 
+## Projects and templates (`domain/model/Project.kt`, `domain/project`)
+
+- `PrintProject` = settings + photo *references* (`ProjectPhoto.sourceRef`), never pixels. Image files
+  live in app-private storage; Room (app module, later) stores only this metadata.
+- `PrintProject.toLayoutRequest()` is the only place a project becomes a layout, including each photo's
+  own crop/zoom/pan, so editing one photo in the preview carries through to the PDF.
+- `PrintTemplate` stores layout settings only. Built-ins: Passport 35×45→4×6, ID 25×35→4×6, 2×2→4×6,
+  Passport→A4. User templates ("My Studio Template") use `TemplateRepository`.
+- `ProjectService`: create-from-template, rename (trimmed, 1–80 chars), duplicate, autosave-style
+  `update` (cannot change id/created time; bumps modified time), delete. IDs and clock are injected.
+- Repositories are interfaces with `Flow`; `InMemoryProjectRepository` serves tests/previews.
+
+## Printing rules (`domain/printing`)
+
+- `PrinterCapabilities` distinguishes `SUPPORTED` / `UNSUPPORTED` / `UNKNOWN`; the UI hides or disables
+  settings accordingly instead of pretending every printer supports everything.
+- `PrintReadiness.evaluate` builds the READY TO PRINT report as *structured* items (no English):
+  only verified facts are `OK`. Unconfirmed actual-size scaling, unconfirmed borderless, a busy or
+  unknown-state printer, paper not in the printer's reported list, and low-resolution photos are
+  `WARNING`; no printer, an offline printer, or an impossible layout are `BLOCKER`.
+  "Fit to page" is a warning that sizes will change, not a silent pass.
+- `PrintReadiness.testSheet` = the first sheet of the real layout ("Print 1 test copy").
+- `CalibrationPage` builds a PDF page with 100 mm and 50 mm rulers and the selected photo frame at true
+  size (omitted, never scaled, if it does not fit beside the rulers). `ScaleDiagnosis` turns a
+  measured length into a scale percentage and a verdict (within 0.5 % counts as accurate).
+
 ## Android module
 - Compose + Material 3 + Hilt. `LayoutEngine` is plain Kotlin and provided by `di/DomainModule`.
 - Design tokens: `core/ui/theme` (colours, type in `sp`, shapes, spacing, 48 dp touch targets).

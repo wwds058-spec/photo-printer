@@ -66,7 +66,7 @@ class LayoutEngine {
                     widthMm = grid.cellWidthMm,
                     heightMm = grid.cellHeightMm,
                     rotation = rotation,
-                    cropState = request.defaultCrop,
+                    cropState = request.crops[photoIds[i]] ?: request.defaultCrop,
                 )
             }
             SheetLayout(

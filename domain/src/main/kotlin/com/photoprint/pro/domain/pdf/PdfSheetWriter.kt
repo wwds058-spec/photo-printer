@@ -62,6 +62,9 @@ class PdfSheetWriter {
         obj(CATALOG_ID) {
             w.text("<< /Type /Catalog /Pages $PAGES_ID 0 R /ViewerPreferences << /PrintScaling /None >> >>\n")
         }
+        obj(FONT_ID) {
+            w.text("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\n")
+        }
         obj(PAGES_ID) {
             val kids = pages.indices.joinToString(" ") { "${pageId(it)} 0 R" }
             w.text("<< /Type /Pages /Count ${pages.size} /Kids [$kids] >>\n")
@@ -83,7 +86,7 @@ class PdfSheetWriter {
             obj(pageId(i)) {
                 w.text(
                     "<< /Type /Page /Parent $PAGES_ID 0 R /MediaBox [0 0 ${num(page.pageWidthPt)} ${num(page.pageHeightPt)}] " +
-                        "/Resources << /XObject << $xobjects >> >> /Contents ${contentId(i)} 0 R >>\n",
+                        "/Resources << /Font << /F1 $FONT_ID 0 R >> /XObject << $xobjects >> >> /Contents ${contentId(i)} 0 R >>\n",
                 )
             }
             val content = content(page, resolved, imageObjectId).toByteArray(Charsets.ISO_8859_1)
@@ -131,7 +134,30 @@ class PdfSheetWriter {
             }
             sb.append("Q\n")
         }
+        for (o in page.overlays) overlay(sb, o, h)
         return sb.toString()
+    }
+
+    private fun overlay(sb: StringBuilder, o: PdfOverlay, pageH: Double) {
+        when (o) {
+            is PdfStrokeLine -> sb.append("q ${num(o.gray)} G ${num(o.widthPt)} w ")
+                .append("${num(o.line.x1Pt)} ${num(pageH - o.line.y1Pt)} m ${num(o.line.x2Pt)} ${num(pageH - o.line.y2Pt)} l S Q\n")
+            is PdfStrokeRect -> sb.append("q ${num(o.gray)} G ${num(o.widthPt)} w ")
+                .append("${num(o.rect.left)} ${num(pageH - o.rect.bottom)} ${num(o.rect.width)} ${num(o.rect.height)} re S Q\n")
+            is PdfText -> sb.append("q ${num(o.gray)} g BT /F1 ${num(o.sizePt)} Tf ")
+                .append("${num(o.xPt)} ${num(pageH - o.baselineYPt)} Td (${escape(o.text)}) Tj ET Q\n")
+        }
+    }
+
+    /** Latin-1 only; escapes the PDF string delimiters. */
+    private fun escape(s: String): String = buildString {
+        for (ch in s) {
+            when {
+                ch == '(' || ch == ')' || ch == '\\' -> append('\\').append(ch)
+                ch.code in 32..255 -> append(ch)
+                else -> append('?')
+            }
+        }
     }
 
     private fun num(v: Double): String {
@@ -156,6 +182,7 @@ class PdfSheetWriter {
     private companion object {
         const val CATALOG_ID = 1
         const val PAGES_ID = 2
-        const val FIRST_IMAGE_ID = 3
+        const val FONT_ID = 3
+        const val FIRST_IMAGE_ID = 4
     }
 }

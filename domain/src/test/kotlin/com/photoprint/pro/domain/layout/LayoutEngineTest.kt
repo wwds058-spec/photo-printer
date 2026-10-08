@@ -307,4 +307,16 @@ class LayoutEngineTest {
         val p = plan(request(paper = paper, photo = TwoByTwoInch, copies = 4, cut = true))
         assertTrue(p.sheets[0].cutLines.isEmpty())
     }
+
+    @Test
+    fun `per-photo crops override the default crop`() {
+        val special = com.photoprint.pro.domain.model.CropState(zoom = 1.8)
+        val r = request(copies = 3).copy(
+            fill = FillStrategy.Copies(listOf(PhotoCopies("a", 1), PhotoCopies("b", 2))),
+            crops = mapOf("b" to special),
+            defaultCrop = com.photoprint.pro.domain.model.CropState(zoom = 1.1),
+        )
+        val crops = plan(r).sheets[0].placements.map { it.cropState.zoom }
+        assertEquals(listOf(1.1, 1.8, 1.8), crops)
+    }
 }
