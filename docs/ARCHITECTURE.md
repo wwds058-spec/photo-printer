@@ -130,8 +130,24 @@ ticks and none are drawn.
   last word, so the app shows the warning "avoid Fit to Page" and offers the calibration page to measure the result.
 - A *Copies of the whole job* control is not shown, because it could not be applied.
 
+## Persistence
+
+- Room stores projects and user templates; Preferences DataStore stores settings. Built-in templates live in code.
+- Each Room entity mirrors a flat `ProjectRecord` / `TemplateRecord` field for field, and the DataStore keys mirror
+  `SettingsRecord`. All meaning and all corner cases live in `StorageCodec` / `SettingsCodec` (pure Kotlin, tested):
+  the photo list is a small versioned JSON document (hand-built with the JSON tree API, no compiler plugin).
+- Defensive by design: a project whose photo JSON is unreadable is left out of the list instead of breaking it;
+  malformed photo entries are dropped, bad optional values fall back to defaults, unknown keys from a newer version
+  are ignored, an unknown enum name falls back to its default, and a half-stored size is replaced by the default.
+- Only metadata is stored. Photo pixels stay in app-private files and are referenced from the project.
+- The database is exported to JSON (`app/schemas`). Use real `Migration`s, never destructive fallback: these are the
+  user's saved jobs.
+- Deleting the project that is currently open also closes it, so autosave cannot bring it back.
+- Not handled yet: photo files are not removed when the last project using them is deleted (they are shared by
+  duplicated projects), so deleted projects can leave orphaned files.
+
 ## Not yet done
 
-Room/DataStore persistence, the physical-measurement pass on real printers, language switching, a sharpness
+The physical-measurement pass on real printers, language switching, a sharpness
 adjustment, background options, screenshot tests (need the Compose runtime, whose desktop artifacts depend on Google
-Maven), and a review of the Android code on a real build.
+Maven), cleaning up orphaned photo files, and a review of the Android code on a real build.

@@ -38,6 +38,11 @@ android {
     sourceSets["main"].java.srcDir("../ui/src/main/kotlin")
 }
 
+// Room writes its schema to JSON so future migrations can be tested against real history.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation(project(":domain"))
     implementation(project(":presentation"))
@@ -54,6 +59,11 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons)
     implementation(libs.kotlinx.coroutines.android)
+
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.datastore.preferences)
 
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)

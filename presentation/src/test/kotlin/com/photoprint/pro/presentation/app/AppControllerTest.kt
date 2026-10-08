@@ -458,6 +458,34 @@ class AppControllerTest {
     }
 
     @Test
+    fun `deleting the open project does not let autosave bring it back`() = runTest {
+        val c = ready()
+        val job = c.startAutosave(debounceMillis = 100)
+        val p = c.persist()!!
+        advanceUntilIdle()
+        assertEquals(p.id, c.session.state.value.projectId)
+        c.deleteProject(p.id); advanceUntilIdle()
+        assertTrue(c.projects.value.isEmpty())
+        assertNull(c.session.state.value.projectId, "the open job was the deleted project, so it is closed")
+        // Later edits have nothing to save and nothing to resurrect.
+        c.session.setCopies(9)
+        advanceTimeBy(1_000); advanceUntilIdle()
+        assertTrue(c.projects.value.isEmpty())
+        job.cancel()
+    }
+
+    @Test
+    fun `deleting a different project leaves the open job alone`() = runTest {
+        val c = ready()
+        val open = c.persist()!!
+        c.duplicateProject(open.id); advanceUntilIdle()
+        val other = c.projects.value.first { it.id != open.id }
+        c.deleteProject(other.id); advanceUntilIdle()
+        assertEquals(open.id, c.session.state.value.projectId)
+        assertTrue(c.session.state.value.hasPhotos)
+    }
+
+    @Test
     fun `saving a template keeps layout settings but no photos`() = runTest {
         val c = ready()
         c.session.setMarginAll(5.0)

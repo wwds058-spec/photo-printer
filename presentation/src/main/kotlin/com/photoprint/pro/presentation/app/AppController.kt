@@ -355,7 +355,12 @@ class AppController(
     }
 
     fun deleteProject(id: String) {
-        scope.launch { projectResult(projectService.delete(id), MessageKind.PROJECT_DELETED) }
+        scope.launch {
+            val outcome = projectService.delete(id)
+            // If the open job is the one just deleted, drop it too; otherwise the next autosave would quietly bring it back.
+            if (outcome is ProjectOutcome.Success && session.state.value.projectId == id) session.startNew(settings.value)
+            projectResult(outcome, MessageKind.PROJECT_DELETED)
+        }
     }
 
     /** "My Studio Template": the current layout settings, without any photos. */
