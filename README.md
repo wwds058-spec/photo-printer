@@ -2,40 +2,39 @@
 
 *Perfect Photos. Perfect Prints.*
 
-Android app for creating physically accurate photo sheets (passport, ID, 2×2 …) on real paper
-sizes (4×6, A4 …) and printing them at actual size.
+Android app for creating physically accurate photo sheets (passport, ID, 2×2 …) on real paper sizes
+(4×6, A4 …) and printing them at actual size.
 
 ## Modules
 
-| Module    | Kind              | Contents                                                                 |
-|-----------|-------------------|--------------------------------------------------------------------------|
-| `:domain` | pure Kotlin / JVM | models, **Layout Engine**, mm → preview / PDF / print geometry, unit tests |
-| `:app`    | Android (Compose) | design system, app shell (UI phases build on this)                       |
+| Module          | Kind                        | Contents                                                                                   | Verified here |
+|-----------------|-----------------------------|--------------------------------------------------------------------------------------------|---------------|
+| `:domain`       | pure Kotlin / JVM           | models, **Layout Engine**, PDF writer, crop maths, printing rules, calibration, projects   | 91 unit tests |
+| `:presentation` | pure Kotlin / JVM           | navigation, session state, `AppController` ("ViewModel"), gesture & viewport maths         | 91 unit tests |
+| `:ui`           | Compose (type-checked only) | theme, components, 15 screens, `PhotoPrintRoot`                                            | compiles against the real Compose API; no screenshots/tests |
+| `:app`          | Android                     | Activity, Hilt ViewModel, `AndroidPlatformGateway` (picker, camera, export, share, print)  | **not compiled** (no Android SDK in the authoring sandbox) |
 
-`:domain` has no Android or Compose dependency, so the part that determines print accuracy can be
-tested anywhere. `:app` is included automatically when an Android SDK is found
-(`ANDROID_HOME`, `ANDROID_SDK_ROOT`, or `sdk.dir` in `local.properties` — Android Studio sets this).
+`:app` is included automatically when an Android SDK is found (`ANDROID_HOME`, `ANDROID_SDK_ROOT`, or
+`sdk.dir` in `local.properties` — Android Studio sets this). It compiles the `:ui` sources directly
+(`sourceSets.main.java.srcDir("../ui/src/main/kotlin")`) against androidx Compose, so the UI code exists once.
 
 ## Commands
 
 ```
-./gradlew :domain:test        # layout engine + geometry tests (no Android SDK needed)
-./gradlew :app:assembleDebug  # needs Android SDK
+./gradlew test                 # 182 tests, no Android SDK needed
+./gradlew :ui:compileKotlin    # type-checks all Compose code (Compose Desktop, no SDK needed)
+./gradlew :app:assembleDebug   # needs the Android SDK
 ```
 
 ## Status
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design, the single-layout-model rule and
-known limits.
+| Area | Status |
+|------|--------|
+| Layout Engine, PDF export, crop maths, calibration page, readiness check | done, tested (rendered PDFs are measured pixel-for-pixel) |
+| Home, photo selection, editor, photo/paper size, layout, preview, printer, print settings, final check, projects, templates, settings, calibration screens | written and type-checked; **never run or looked at on a device** |
+| Android glue (photo picker, camera, PDF save/share/image, system print dialog) | written, **never compiled or run** |
+| Room (projects, templates) and DataStore (settings) | **not started** — in-memory stores, so data is lost when the app closes |
+| Languages other than English, localisation | strings centralised in `Strings.kt`; no translations |
+| Sharpness slider, background options, AI features | not started |
 
-| Phase | Status |
-|-------|--------|
-| 1 Architecture + design system | done — `:app` **not yet compiled** (no Android SDK in the authoring environment) |
-| 2 Measurement models + Layout Engine | done |
-| 3 Layout Engine tests | done |
-| 7 PDF generation (pure Kotlin, in `:domain`) | done — verified by rendering the PDF and measuring pixels |
-| 9 (domain half) projects, templates, repositories | done as pure Kotlin; Room implementation still to do in `:app` |
-| 8 (domain half) printing models, safety check, test print | done; `PrintDocumentAdapter` / printer discovery still to do in `:app` |
-| 11 (domain half) calibration page + scale diagnosis | done; the physical measurement itself needs a real printer |
-| 4–6 UI (home, picker, editor, sizes, preview) | not started — needs Android Studio to compile |
-| Android print framework, Room, DataStore | not started — needs Android Studio |
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and the known limits.

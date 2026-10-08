@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Camera output (imported into photos/ afterwards). -->
+    <files-path name="camera" path="camera/" />
+    <!-- PDFs and images handed to the share sheet. Cleared before every export. -->
+    <cache-path name="shared" path="shared/" />
+</paths>

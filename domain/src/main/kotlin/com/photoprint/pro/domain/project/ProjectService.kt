@@ -127,3 +127,18 @@ class InMemoryProjectRepository : ProjectRepository {
         state.value = state.value - id
     }
 }
+
+/** In-memory template store for tests and previews. */
+class InMemoryTemplateRepository : TemplateRepository {
+    private val state = MutableStateFlow<Map<String, com.photoprint.pro.domain.model.PrintTemplate>>(emptyMap())
+
+    override fun observeUserTemplates(): Flow<List<com.photoprint.pro.domain.model.PrintTemplate>> = state.map { it.values.toList() }
+
+    override suspend fun upsert(template: com.photoprint.pro.domain.model.PrintTemplate) {
+        state.value = state.value + (template.id to template)
+    }
+
+    override suspend fun delete(id: String) {
+        state.value = state.value - id
+    }
+}

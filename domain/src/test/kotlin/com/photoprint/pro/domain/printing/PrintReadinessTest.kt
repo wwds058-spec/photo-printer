@@ -70,6 +70,18 @@ class PrintReadinessTest {
     }
 
     @Test
+    fun `printer chosen in the system dialog is neutral not a pass or a blocker`() {
+        val r = PrintReadiness.evaluate(project(), null, PrinterCapabilities(), PrintSettings(), printerChosenBySystem = true)
+        assertTrue(r.canPrint)
+        assertNotNull(r.item<ReadinessItem.PrinterChosenInPrintDialog>())
+        assertEquals(null, r.item<ReadinessItem.NoPrinter>())
+        assertEquals(Severity.INFO, r.item<ReadinessItem.PrinterChosenInPrintDialog>()!!.severity)
+        assertFalse(r.items.any { it is ReadinessItem.Printer }, "no printer check mark is claimed")
+        // Without the flag the same situation still blocks.
+        assertFalse(PrintReadiness.evaluate(project(), null, PrinterCapabilities(), PrintSettings()).canPrint)
+    }
+
+    @Test
     fun `printer status maps to severity`() {
         assertFalse(report(printer = ready.copy(status = PrinterStatus.OFFLINE)).canPrint)
         val busy = report(printer = ready.copy(status = PrinterStatus.BUSY))

@@ -62,6 +62,9 @@ data class ImageDrawing(
 
 enum class ImageQuality { GOOD, ACCEPTABLE, LOW }
 
+/** Largest |pan| (as a fraction of the frame's width/height) that still lets the image cover the frame. */
+data class PanLimits(val maxX: Double, val maxY: Double)
+
 /**
  * Crop/zoom/pan/rotate maths. The frame is fixed; only the image moves inside it. The image
  * always covers the frame (zoom < 1 and over-panning are clamped) so no blank edges are printed.
@@ -81,6 +84,19 @@ object ImageFit {
         val iw = (if (swap) imgH else imgW).toDouble()
         val ih = (if (swap) imgW else imgH).toDouble()
         return max(frameW / iw, frameH / ih) * zoom.coerceAtLeast(1.0)
+    }
+
+    /**
+     * Pan limits for an unrotated photo frame of any unit ([frameW] × [frameH]); only the ratio matters.
+     * The editor and [draw] share this, so what the user can drag is exactly what gets printed.
+     */
+    fun panLimits(frameW: Double, frameH: Double, imgW: Int, imgH: Int, crop: CropState): PanLimits {
+        val quarter = quarterTurns(crop.rotationDegrees)
+        val s = coverScale(frameW, frameH, imgW, imgH, quarter, crop.zoom)
+        val swap = quarter == 90 || quarter == 270
+        val scaledW = (if (swap) imgH else imgW) * s
+        val scaledH = (if (swap) imgW else imgH) * s
+        return PanLimits(maxOf(0.0, (scaledW - frameW) / (2 * frameW)), maxOf(0.0, (scaledH - frameH) / (2 * frameH)))
     }
 
     /**
@@ -113,13 +129,9 @@ object ImageFit {
         val fh = if (turned) frame.width else frame.height
 
         val s = coverScale(fw, fh, imgW, imgH, quarter, crop.zoom)
-        val swap = quarter == 90 || quarter == 270
-        val scaledW = (if (swap) imgH else imgW) * s
-        val scaledH = (if (swap) imgW else imgH) * s
-        val maxPanX = (scaledW - fw) / 2
-        val maxPanY = (scaledH - fh) / 2
-        val panX = (crop.panX * fw).coerceIn(-maxPanX, maxPanX)
-        val panY = (crop.panY * fh).coerceIn(-maxPanY, maxPanY)
+        val limits = panLimits(fw, fh, imgW, imgH, crop)
+        val panX = crop.panX.coerceIn(-limits.maxX, limits.maxX) * fw
+        val panY = crop.panY.coerceIn(-limits.maxY, limits.maxY) * fh
 
         var m = Affine.scale(imgW.toDouble(), imgH.toDouble()) // unit → source pixels
             .then(Affine.translate(-imgW / 2.0, -imgH / 2.0))

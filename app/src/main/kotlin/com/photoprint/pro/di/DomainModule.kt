@@ -7,7 +7,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-/** The domain module is plain Kotlin, so it is wired into Hilt here rather than annotated itself. */
+/** The domain modules are plain Kotlin, so they are wired into Hilt here rather than annotated themselves. */
 @Module
 @InstallIn(SingletonComponent::class)
 object DomainModule {

@@ -86,7 +86,52 @@ ticks and none are drawn.
   size (omitted, never scaled, if it does not fit beside the rulers). `ScaleDiagnosis` turns a
   measured length into a scale percentage and a verdict (within 0.5 % counts as accurate).
 
-## Android module
-- Compose + Material 3 + Hilt. `LayoutEngine` is plain Kotlin and provided by `di/DomainModule`.
-- Design tokens: `core/ui/theme` (colours, type in `sp`, shapes, spacing, 48 dp touch targets).
-- No `INTERNET` permission: photos never leave the device unless the user shares/prints them.
+## Presentation logic (`:presentation`, pure Kotlin)
+
+- `PrintSession` holds everything the user has chosen and recomputes the layout on every change, so the preview,
+  PDF and print read one plan. Screens never keep their own copy, so going back a step loses nothing.
+- `AppController` is the app's ViewModel in pure Kotlin: navigation, saving, export, printing, projects, templates,
+  settings. It talks to the OS only through the small `PlatformGateway` interface and is tested with a fake one.
+  Unexpected platform exceptions become a friendly message; the busy indicator is always cleared.
+- Gesture maths (`CropEditing`, `SheetViewportMath`) is plain functions, tested against the same code the PDF uses:
+  after a pinch the image point under the fingers has not moved in the printed frame; the editor's pan limits are
+  `ImageFit.panLimits`, the same function `ImageFit.draw` clamps with.
+- `NavStack` is a simple back stack rather than Jetpack Navigation Compose: Navigation Compose cannot be built or
+  tested in the authoring environment, and because the work lives in `PrintSession` the screens are stateless, so
+  nothing needs the library's saved-state handling. It can be swapped later; routes are already a sealed type.
+
+## Compose UI (`:ui`)
+
+- Stateless screens: values and callbacks in, no logic. `PhotoPrintRoot` maps routes to screens, animates
+  transitions by direction, shows bottom tabs on top-level destinations only, turns controller messages into
+  snackbars and blocks input while a PDF is built.
+- The preview draws with `ImageFit.draw`, the same function the PDF writer uses, and scales positions from the
+  `SheetLayout` in millimetres, so the screen shows what will print. Zoom changes only the view scale.
+- Status is never colour alone: every status has an icon and a word; controls have 48 dp targets and content
+  descriptions; text is in `sp`. Gestures have non-gesture alternatives (zoom slider, rotate, reorder buttons).
+- Compiled here with Compose Desktop, which has the same `androidx.compose.*` API; `:app` compiles the same files
+  against androidx Compose (BOM 2024.12.01 ≈ Compose Multiplatform 1.7.3).
+
+## Android module (`:app`)
+
+- Hilt `AppViewModel` holds the `AppController`; `MainActivity` registers the system pickers and forwards Back.
+- No `INTERNET`, storage or camera permission. Photos are copied into app-private storage on import.
+- `AndroidPlatformGateway`: photo picker, camera (TakePicture), export (create-document, share sheet), PDF to PNG
+  (PdfRenderer), and printing through `PrintManager` with a `PrintDocumentAdapter` that streams the same PDF.
+- An untouched RGB/grey JPEG is embedded byte for byte; anything else (EXIF rotation, brightness/contrast, PNG,
+  CMYK) is decoded at full resolution and re-encoded at quality 95.
+
+### What Android's public print API does not allow (so the UI does not pretend)
+
+- **No printer list.** Apps cannot enumerate printers; the system print dialog shows them. The printer screen says
+  so, offers *Add printer* (system print settings), and the final check shows "you will choose it in the print
+  dialog" as neutral information, never as a green check.
+- **Copies, quality, borderless, actual size are hints at best.** The print dialog and the print service have the
+  last word, so the app shows the warning "avoid Fit to Page" and offers the calibration page to measure the result.
+- A *Copies of the whole job* control is not shown, because it could not be applied.
+
+## Not yet done
+
+Room/DataStore persistence, the physical-measurement pass on real printers, language switching, a sharpness
+adjustment, background options, screenshot tests (need the Compose runtime, whose desktop artifacts depend on Google
+Maven), and a review of the Android code on a real build.

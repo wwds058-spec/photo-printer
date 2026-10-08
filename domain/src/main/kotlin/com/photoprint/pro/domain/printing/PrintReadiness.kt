@@ -11,7 +11,8 @@ import com.photoprint.pro.domain.model.toLayoutRequest
 import com.photoprint.pro.domain.pdf.ImageFit
 import com.photoprint.pro.domain.pdf.ImageQuality
 
-enum class Severity { OK, WARNING, BLOCKER }
+/** INFO = neutral, not verified and not a problem (e.g. the printer is picked later in Android's print dialog). */
+enum class Severity { OK, INFO, WARNING, BLOCKER }
 
 /**
  * One line of the READY TO PRINT screen. Structured values, no English: the UI formats and
@@ -38,6 +39,14 @@ sealed interface ReadinessItem {
 
     data object NoPrinter : ReadinessItem {
         override val severity = Severity.BLOCKER
+    }
+
+    /**
+     * Android's public print API has no printer list for apps: the system print dialog asks for the printer.
+     * Printer state and paper support are therefore unknown until then — neutral, not a pass.
+     */
+    data object PrinterChosenInPrintDialog : ReadinessItem {
+        override val severity = Severity.INFO
     }
 
     data class Printer(val printer: PrinterInfo) : ReadinessItem {
@@ -90,6 +99,7 @@ object PrintReadiness {
         capabilities: PrinterCapabilities,
         settings: PrintSettings,
         engine: LayoutEngine = LayoutEngine(),
+        printerChosenBySystem: Boolean = false,
     ): ReadinessReport {
         val items = mutableListOf<ReadinessItem>()
 
@@ -107,7 +117,7 @@ object PrintReadiness {
         }
 
         if (printer == null) {
-            items += ReadinessItem.NoPrinter
+            items += if (printerChosenBySystem) ReadinessItem.PrinterChosenInPrintDialog else ReadinessItem.NoPrinter
         } else {
             items += ReadinessItem.Printer(printer)
             if (capabilities.advertisesPaper(project.paperSize) == false) {

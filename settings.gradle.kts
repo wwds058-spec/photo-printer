@@ -19,6 +19,13 @@ rootProject.name = "PhotoPrintPro"
 // Pure Kotlin/JVM: models, Layout Engine, geometry. Builds and tests anywhere (no Android SDK).
 include(":domain")
 
+// Pure Kotlin UI logic (navigation, session state, gesture and viewport maths). Fully unit-tested.
+include(":presentation")
+
+// Compose UI (theme, components, screens) written against the common androidx.compose API. It is type-checked
+// on the JVM with Compose Desktop; :app compiles the same sources against androidx Compose.
+include(":ui")
+
 // Android application. Only included when an Android SDK is present, so the domain module can
 // be built and tested on machines/CI images without one. Android Studio creates local.properties
 // with sdk.dir, which enables this automatically.
