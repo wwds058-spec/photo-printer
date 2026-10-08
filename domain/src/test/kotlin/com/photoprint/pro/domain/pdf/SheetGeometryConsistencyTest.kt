@@ -99,16 +99,14 @@ class SheetGeometryConsistencyTest {
     }
 
     @Test
-    fun `4x6 media and pdf page sizes`() {
+    fun `4x6 media and pdf page sizes are unrounded`() {
         val sheet = plan(PaperSizePresets.Photo4x6).sheets[0]
         val media = sheet.toPrintMediaSpec()
         assertEquals(4016, media.widthMils) // 102 mm
         assertEquals(5984, media.heightMils) // 152 mm
         val pdf = sheet.toPdfPageSpec()
-        assertEquals(289, pdf.pageWidthPtRounded)
-        assertEquals(431, pdf.pageHeightPtRounded)
-        // Whole-point page boxes are the one place physical size is quantised; bound the error.
-        assertTrue(pdf.pageWidthRoundingErrorMm <= 0.1764 + 1e-9)
-        assertTrue(pdf.pageHeightRoundingErrorMm <= 0.1764 + 1e-9)
+        // Unrounded: 102 mm = 289.1339 pt exactly, not 289.
+        assertEquals(289.1339, pdf.pageWidthPt, 1e-4)
+        assertEquals(430.8661, pdf.pageHeightPt, 1e-4)
     }
 }

@@ -15,7 +15,9 @@ The three conversions are linear scalings, and `SheetGeometryConsistencyTest` co
 millimetres and requires the originals. View zoom changes only `PreviewTransform.pxPerMm`, never the
 layout.
 
-The Android print job will print the *same PDF* produced for "Save PDF" (via a
+The PDF is written by `PdfSheetWriter` (pure Kotlin, in `:domain`), not by Android's `PdfDocument`, because
+`PdfDocument.PageInfo` only accepts whole points (up to ~0.18 mm page error) while a PDF `MediaBox` takes real
+numbers. The Android print job will print the *same PDF* produced for "Save PDF" (via a
 `PrintDocumentAdapter`), so print cannot diverge from the PDF either.
 
 ## Layout Engine (`domain/layout`)
@@ -39,12 +41,24 @@ ticks and none are drawn.
 
 ### Known limits (deliberate, documented)
 - One orientation per sheet (no mixed packing of leftover strips).
-- `PdfDocument.PageInfo` takes whole points, so the PDF page box can differ from the paper by up
-  to ~0.18 mm (`PdfPageSpec.pageWidthRoundingErrorMm`). Frames are drawn with float precision.
-  The phase-11 calibration page will measure the real end-to-end effect per printer.
 - Actual-size printing depends on the printer service. The print dialog may offer "fit to page";
   the app can warn but cannot force it off. Android's public API exposes limited settings, so
   unsupported options are hidden/disabled in the UI rather than faked.
+
+## PDF export (`domain/pdf`)
+
+- One page per sheet; `MediaBox` = exact paper size (e.g. 102 mm = 289.1339 pt, unrounded).
+- JPEGs are embedded byte-for-byte (`DCTDecode`), shared across frames; no recompression.
+- Each frame clips its image: crop/zoom/pan/rotate move the *image*, never the frame. The image
+  always covers the frame (zoom < 1 and over-panning are clamped, so no blank edges).
+- Placement rotation (engine turned the photo 90° to fit more) and user rotation compose; both are clockwise.
+- `/ViewerPreferences /PrintScaling /None` asks viewers to print at 100 %.
+- Output is deterministic (no timestamps). A missing image throws `MissingImageException` before any byte is written.
+- `ImageFit.effectiveDpi` gives the real source-pixels-per-inch at the chosen crop/zoom
+  (≥ 300 good, ≥ 200 acceptable, else low) for the pre-print quality warning.
+- The app passes the editor's output as a JPEG per photo. Brightness/contrast are baked into that
+  JPEG by the Android side (re-encode at high quality) — the writer itself does not alter pixels.
+- Tests render the PDF with PDFBox at 254 dpi (10 px = 1 mm) and measure where colours land.
 
 ## Android module
 - Compose + Material 3 + Hilt. `LayoutEngine` is plain Kotlin and provided by `di/DomainModule`.

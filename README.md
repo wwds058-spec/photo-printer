@@ -32,5 +32,7 @@ known limits.
 |-------|--------|
 | 1 Architecture + design system | done — `:app` **not yet compiled** (no Android SDK in the authoring environment) |
 | 2 Measurement models + Layout Engine | done |
-| 3 Layout Engine tests | done (37 tests) |
-| 4+ UI, PDF, printing, projects … | not started |
+| 3 Layout Engine tests | done |
+| 7 PDF generation (pure Kotlin, in `:domain`) | done — verified by rendering the PDF and measuring pixels (55 tests total) |
+| 4–6 UI (home, picker, editor, sizes, preview) | not started — needs Android Studio to compile |
+| 8+ Android print framework, projects, templates … | not started |

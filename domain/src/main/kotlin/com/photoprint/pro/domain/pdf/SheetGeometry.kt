@@ -5,7 +5,6 @@ import com.photoprint.pro.domain.measurement.Rect
 import com.photoprint.pro.domain.model.CropState
 import com.photoprint.pro.domain.model.CutLine
 import com.photoprint.pro.domain.model.SheetLayout
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /*
@@ -28,29 +27,15 @@ data class PdfFrame(
 data class PdfLine(val x1Pt: Double, val y1Pt: Double, val x2Pt: Double, val y2Pt: Double)
 
 /**
- * Everything a PDF page renderer needs, in points (1/72 in), origin top-left, y down — the
- * same convention as `android.graphics.pdf.PdfDocument`'s canvas.
+ * Everything a PDF page renderer needs, in points (1/72 in), origin top-left, y down. The page
+ * size is the exact paper size as a real number; [PdfSheetWriter] writes it unrounded.
  */
 data class PdfPageSpec(
     val pageWidthPt: Double,
     val pageHeightPt: Double,
     val frames: List<PdfFrame>,
     val cutLines: List<PdfLine>,
-) {
-    /**
-     * `PdfDocument.PageInfo.Builder` only accepts whole points, so the page box is rounded.
-     * Frames are drawn with float precision and stay exact; the page size can differ from the
-     * true paper size by up to half a point (~0.18 mm). The calibration page (phase 11) measures
-     * the real effect on printers.
-     */
-    val pageWidthPtRounded: Int get() = pageWidthPt.roundToInt()
-    val pageHeightPtRounded: Int get() = pageHeightPt.roundToInt()
-
-    val pageWidthRoundingErrorMm: Double
-        get() = abs(Measurement.pointsToMm(pageWidthPtRounded - pageWidthPt))
-    val pageHeightRoundingErrorMm: Double
-        get() = abs(Measurement.pointsToMm(pageHeightPtRounded - pageHeightPt))
-}
+)
 
 fun SheetLayout.toPdfPageSpec(): PdfPageSpec {
     val k = Measurement.mmToPoints(1.0)

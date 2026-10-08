@@ -16,12 +16,15 @@ kotlin {
 
 dependencies {
     testImplementation(libs.kotlin.test)
+    // Independent PDF reader/renderer used only to verify the writer's physical output.
+    testImplementation(libs.pdfbox)
     testImplementation(platform(libs.junit.bom))
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 tasks.test {
     useJUnitPlatform()
+    systemProperty("java.awt.headless", "true")
     testLogging {
         events("passed", "skipped", "failed")
         showStandardStreams = false
